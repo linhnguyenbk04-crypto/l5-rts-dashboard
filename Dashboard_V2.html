@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>L5 RTS Dashboard (All-in-one)</title>
+
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+  body { font-family: 'Roboto', sans-serif; margin: 0; padding: 0; background-color: #f3f4f6; }
+
+  .slide-container{
+    width:1280px; height:720px; background:#fff; position:relative; display:flex; flex-direction:column;
+    overflow:hidden; box-sizing:border-box; padding:40px; transform-origin: top left;
+  }
+
+  /* ========== SCREEN PREVIEW FIT ========== */
+  @media screen {
+    :root { --pad: 56px; }
+    body{
+      margin:0; background:#f3f4f6; padding: var(--pad);
+      display:flex; justify-content:center; align-items:flex-start;
+    }
+    .slide-container{
+      transform: scale(min((100vw - (var(--pad) * 2)) / 1280, (100vh - (var(--pad) * 2)) / 720));
+      border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+    body.preview-full .slide-container{
+      height: auto; overflow: visible;
+      transform: scale((100vw - (var(--pad) * 2)) / 1280);
+    }
+  }
+
+  .brand-blue { color: #051c2c; }
+
+  .table-row { border-bottom: 1px solid #e5e7eb; transition: background-color 0.2s; }
+  .table-row:last-child { border-bottom: none; }
+  .table-row:hover { background-color: #f9fafb; }
+
+  .progress-track { background-color: #e5e7eb; height: 6px; border-radius: 999px; overflow: hidden; width: 100%; }
+  .progress-fill { height: 100%; border-radius: 999px; }
+  .bg-progress { background-color: #005eb8; }
+  .bg-paid { background-color: #10b981; }
+
+  .status-dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; }
+  .status-green { background-color: #10b981; box-shadow: 0 0 0 2px #d1fae5; }
+  .status-amber { background-color: #f59e0b; box-shadow: 0 0 0 2px #fef3c7; }
+  .status-red   { background-color: #ef4444; box-shadow: 0 0 0 2px #fee2e2; }
+
+  .sidebar-card { border-left: 4px solid #051c2c; }
+
+  .step-connector { position: absolute; left: 15px; top: 28px; bottom: -20px; width: 2px; background-color: #e5e7eb; z-index: 0; }
+  .last-step .step-connector { display: none; }
+
+  /* Tabs */
+  .tab-btn{
+    border: 1px solid #d1d5db; background: #fff; padding: 8px 14px; border-radius: 999px;
+    font-weight: 700; font-size: 13px; color: #111827; display:flex; align-items:center; gap:10px;
+  }
+  .tab-btn .pill{
+    border: 1px solid #e5e7eb; color:#6b7280; padding: 2px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; background:#fff;
+  }
+  .tab-btn.active{ border-color:#93c5fd; box-shadow:0 0 0 4px rgba(59,130,246,.15); }
+
+  /* KPI styles (from your separated KPI file) */
+  .brand-accent-border{ border-left:4px solid #005eb8; }
+  .kpi-shadow{
+    box-shadow:0 4px 6px -1px rgba(0,0,0,.05), 0 2px 4px -1px rgba(0,0,0,.03);
+  }
+</style>
+</head>
+
+<body class="preview-full">
+<div class="slide-container">
+
+  <!-- Top Bar: Title + Tabs -->
+  <div class="flex items-start justify-between mb-3">
+    <div class="flex flex-col">
+      <h1 class="text-4xl font-extrabold brand-blue leading-tight">
+        RTS Project Execution &amp; COD Progress – L5 Portfolio
+        <span class="text-red-600 font-extrabold" id="reportDateLabel">Mar 03</span>
+      </h1>
+      <p class="text-base text-gray-600 mt-1">
+        Portfolio remains <span class="text-green-700 font-bold">on track</span> toward Q1 2026 COD with controlled project-specific constraints.
+      </p>
+    </div>
+
+    <div class="flex gap-3 flex-wrap justify-end">
+      <button class="tab-btn active" data-tab="summary">Summary <span class="pill">dashboard</span></button>
+      <button class="tab-btn" data-tab="progress">Progress Tracking <span class="pill">detail</span></button>
+      <button class="tab-btn" data-tab="payment">Payment Tracking <span class="pill">finance</span></button>
+    </div>
+  </div>
+
+  <div class="border-b border-gray-300 pb-3 mb-4"></div>
+
+  <!-- ===================== SUMMARY PAGE ===================== -->
+  <section id="page-summary" class="flex flex-col gap-5">
+
+    <!-- KPI GRID (embedded) -->
+    <div class="grid grid-cols-3 gap-5">
+      <!-- KPI 1 -->
+      <div class="bg-white p-4 rounded-lg border border-gray-200 kpi-shadow brand-accent-border h-28 flex flex-col justify-between relative">
+        <i class="fas fa-solar-panel absolute right-3 top-3 text-gray-100 text-5xl opacity-20 rotate-12"></i>
+        <p class="text-sm font-bold text-gray-500 uppercase tracking-widest">Total Projects</p>
+        <div>
+          <p class="text-5xl font-extrabold brand-blue leading-none" id="kpiTotalProjects">-</p>
+          <p class="text-sm text-gray-400 mt-0.5">Sites in portfolio</p>
+        </div>
+      </div>
+
+      <!-- KPI 2 -->
+      <div class="bg-white p-4 rounded-lg border border-gray-200 kpi-shadow brand-accent-border h-28 flex flex-col justify-between relative">
+        <i class="fas fa-bolt absolute right-3 top-3 text-gray-100 text-5xl opacity-20 rotate-12"></i>
+        <p class="text-sm font-bold text-gray-500 uppercase tracking-widest">Total Capacity</p>
+        <div>
+          <div class="flex items-baseline">
+            <p class="text-5xl font-extrabold brand-blue leading-none" id="kpiTotalCapacity">-</p>
+            <span class="ml-1 text-base font-semibold text-gray-500">MWp</span>
+          </div>
+          <p class="text-sm text-gray-400 mt-0.5">Installed capacity</p>
+        </div>
+      </div>
+
+      <!-- OVERALL STATUS -->
+      <div class="bg-green-50 p-4 rounded-lg border border-green-200 h-28 flex items-center">
+        <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-2xl mr-3">
+          <i class="fas fa-tasks"></i>
+        </div>
+        <div>
+          <p class="text-sm font-bold text-green-800 uppercase mb-1">Overall Status</p>
+          <div class="flex items-center">
+            <h3 class="text-3xl font-extrabold text-green-900 leading-none mr-2" id="kpiOverallStatus">On Track</h3>
+            <span class="bg-white text-green-700 text-sm px-2.5 py-0.5 rounded border border-green-200 font-semibold" id="kpiOverallBadge">
+              With Constraints
+            </span>
+          </div>
+          <p class="text-sm text-green-700 mt-0.5">Portfolio execution health</p>
+        </div>
+      </div>
+
+      <!-- KPI 3 -->
+      <div class="bg-white p-4 rounded-lg border border-gray-200 kpi-shadow brand-accent-border h-28 flex flex-col justify-between relative">
+        <i class="fas fa-charging-station absolute right-3 top-3 text-gray-100 text-5xl opacity-20 rotate-12"></i>
+        <p class="text-sm font-bold text-gray-500 uppercase tracking-widest">COD Achieved</p>
+        <div>
+          <div class="flex items-baseline">
+            <p class="text-5xl font-extrabold brand-blue leading-none" id="kpiCodMWp">-</p>
+            <span class="ml-1 text-base font-semibold text-gray-500">MWp</span>
+          </div>
+          <p class="text-sm font-semibold text-green-600 mt-0.5" id="kpiCodPct">↑ -% completed</p>
+        </div>
+      </div>
+
+      <!-- KPI 4 -->
+      <div class="bg-white p-4 rounded-lg border border-gray-200 kpi-shadow brand-accent-border h-28 flex flex-col justify-between relative">
+        <i class="fas fa-calendar-check absolute right-3 top-3 text-gray-100 text-5xl opacity-20 rotate-12"></i>
+        <p class="text-sm font-bold text-gray-500 uppercase tracking-widest">COD Window</p>
+        <div>
+          <p class="text-2xl font-extrabold brand-blue leading-tight" id="kpiCodWindow">Oct ’25 – Mar ’26</p>
+          <p class="text-sm text-gray-400 mt-0.5">Target completion</p>
+        </div>
+      </div>
+
+      <!-- SAFETY -->
+      <div class="bg-green-50 p-4 rounded-lg border border-green-200 h-28 flex items-center">
+        <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-2xl mr-3">
+          <i class="fas fa-hard-hat"></i>
+        </div>
+        <div>
+          <p class="text-sm font-bold text-green-800 uppercase mb-1">Safety</p>
+          <div class="flex items-center">
+            <h3 class="text-3xl font-extrabold text-green-900 leading-none mr-2" id="kpiSafetyText">Zero Incidents</h3>
+            <span class="bg-white text-green-700 text-sm px-2.5 py-0.5 rounded border border-green-200 font-semibold" id="kpiSafetyBadge">✓ Safe</span>
+          </div>
+          <p class="text-sm text-green-700 mt-0.5">Maintained across all sites</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content: table + sidebar -->
+    <div class="flex gap-8">
+      <!-- Left Column -->
+      <div class="w-2/3 flex flex-col">
+
+        <div class="flex flex-col mb-2">
+          <h2 class="text-2xl font-extrabold brand-blue leading-tight">L5 RTS Project Data &amp; Management Framework</h2>
+          <p class="text-sm text-gray-600 mt-1">Detailed project status breakdown and immediate management priorities.</p>
+        </div>
+
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+          <div class="grid grid-cols-12 gap-4 bg-gray-50 p-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 items-center">
+            <div class="col-span-3">Project / kWp</div>
+            <div class="col-span-1 text-center">Phase</div>
+            <div class="col-span-2">Progress</div>
+            <div class="col-span-2">Paid</div>
+            <div class="col-span-1 text-center">Status</div>
+            <div class="col-span-3">Target COD / Remark</div>
+          </div>
+          <div id="summaryTableBody"></div>
+        </div>
+
+        <div class="mt-4 flex gap-3 text-xs text-gray-500 bg-gray-50 p-3 rounded border border-gray-200">
+          <i class="fas fa-info-circle mt-0.5 text-blue-400"></i>
+          <div class="leading-relaxed">
+            <p class="mb-1"><strong class="text-gray-700">Benchmark:</strong> 14 weeks is used as the RTS execution benchmark for ~1 MWp projects (Creative reference).</p>
+            <p><strong class="text-gray-700">Timeline Drivers:</strong> Extended timelines mainly driven by Tet holiday, site constraints, and roof reinforcement scope.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="w-1/3 flex flex-col gap-6">
+
+        <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200 sidebar-card">
+          <div class="flex items-center mb-4">
+            <div class="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">
+              <i class="fas fa-bullseye"></i>
+            </div>
+            <h3 class="font-bold brand-blue text-lg">Key Focus (4–8 Weeks)</h3>
+          </div>
+
+          <ul id="keyFocusList" class="space-y-4"></ul>
+
+		  
+        </div>
+
+<!--
+        <div class="bg-gray-50 rounded-lg p-6 border border-gray-200 flex-1">
+          <h3 class="font-bold brand-blue text-sm uppercase tracking-wide mb-5 border-b border-gray-200 pb-2">RTS Execution Framework</h3>
+          <div class="relative flex-1 pl-2">
+
+            <div class="flex items-start relative mb-6">
+              <div class="step-connector"></div>
+              <div class="z-10 w-8 h-8 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold border-4 border-white shadow-sm flex-shrink-0">1</div>
+              <div class="ml-4 pt-0.5">
+                <p class="text-base font-extrabold text-gray-800 leading-tight">Phase 1 – Design & Permit Preparation (MS1)</p>
+                <p class="text-xs text-gray-500 mt-0.5 leading-snug">Concept &amp; DED completion, DOIT / EVN submissions approved</p>
+              </div>
+            </div>
+
+            <div class="flex items-start relative mb-6">
+              <div class="step-connector"></div>
+              <div class="z-10 w-8 h-8 rounded-full bg-white text-blue-900 border-2 border-blue-900 flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">2</div>
+              <div class="ml-4 pt-0.5">
+                <p class="text-base font-extrabold text-gray-800 leading-tight">Phase 2 – Procurement &amp; Construction (MS2)</p>
+                <p class="text-xs text-gray-500 mt-0.5 leading-snug">Procurement, installation, HSE approval, material inspection (ITP), progress control</p>
+              </div>
+            </div>
+
+            <div class="flex items-start relative mb-6">
+              <div class="step-connector"></div>
+              <div class="z-10 w-8 h-8 rounded-full bg-white text-gray-400 border-2 border-gray-300 flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">3</div>
+              <div class="ml-4 pt-0.5">
+                <p class="text-base font-extrabold text-gray-800 leading-tight">Phase 3 – Installation, Energization &amp; Pre-Commissioning (MS3)</p>
+                <p class="text-xs text-gray-500 mt-0.5 leading-snug">Testing, punchlist close-out, commissioning, COD readiness &amp; acceptance</p>
+              </div>
+            </div>
+
+            <div class="flex items-start relative last-step">
+              <div class="z-10 w-8 h-8 rounded-full bg-white text-gray-400 border-2 border-gray-300 flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">4</div>
+              <div class="ml-4 pt-0.5">
+                <p class="text-base font-extrabold text-gray-800 leading-tight">Phase 4 – Commissioning, Handover &amp; Close-out &amp; AM Transition (MS4)</p>
+                <p class="text-xs text-gray-500 mt-0.5 leading-snug">EPC handover, PM → AM transfer, legal &amp; finance clearance, final settlement &amp; O&amp;M start</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+========= -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PROGRESS PAGE ===================== -->
+  <section id="page-progress" class="hidden flex flex-col flex-1">
+    <div class="flex items-center justify-between mb-3">
+      <div>
+        <h2 class="text-3xl font-extrabold brand-blue leading-tight">Progress Tracking (Detail)</h2>
+        <p class="text-sm text-gray-600 mt-1">Approved weekly snapshots &amp; supporting detail (for audit trail).</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <input id="progressSearch" class="border border-gray-300 rounded-full px-4 py-2 text-sm w-80" placeholder="Search..." />
+        <button id="btnExportProgress" class="border border-gray-300 rounded-full px-4 py-2 text-sm font-bold bg-white">Export CSV</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div class="grid grid-cols-12 gap-4 bg-gray-50 p-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 items-center">
+        <div class="col-span-2">Week End</div>
+        <div class="col-span-2">Project</div>
+        <div class="col-span-2">Phase</div>
+        <div class="col-span-2">Progress</div>
+        <div class="col-span-2">Paid</div>
+        <div class="col-span-2">Remark</div>
+      </div>
+      <div id="progressTableBody"></div>
+    </div>
+  </section>
+
+  <!-- ===================== PAYMENT PAGE ===================== -->
+  <section id="page-payment" class="hidden flex flex-col flex-1">
+    <div class="flex items-center justify-between mb-3">
+      <div>
+        <h2 class="text-3xl font-extrabold brand-blue leading-tight">Payment Tracking</h2>
+        <p class="text-sm text-gray-600 mt-1">Milestone-based payment tracking with condition status.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <input id="paymentSearch" class="border border-gray-300 rounded-full px-4 py-2 text-sm w-80" placeholder="Search..." />
+        <button id="btnExportPayment" class="border border-gray-300 rounded-full px-4 py-2 text-sm font-bold bg-white">Export CSV</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div class="grid grid-cols-12 gap-4 bg-gray-50 p-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 items-center">
+        <div class="col-span-2">Project</div>
+        <div class="col-span-3">Milestone</div>
+        <div class="col-span-2">Due</div>
+        <div class="col-span-2">Amount</div>
+        <div class="col-span-2">Status</div>
+        <div class="col-span-1">Notes</div>
+      </div>
+      <div id="paymentTableBody"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+
+// ===== JSONP PROXY WEB APP (Apps Script) =====
+const WEBAPP = "https://script.google.com/macros/s/AKfycbzoWYqJoF8OLl0E11x4PmCmQ8jt7u6i5UdBis_gtaAxvP62A5cwFJ2_WI-oLKK8dKd8hw/exec";
+
+// ===== CSV LINKS (published Google Sheet CSV) =====
+const CSV_MAIN =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHWPaQciaxI9qcB7oPUUPtoA8aQ9EKJlbLgGYwobi8NjqGvWMw8vVYW170u45FQDwBMPItsUJ5yHDo/pub?gid=1989804057&single=true&output=csv";
+
+const CSV_PROGRESS =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHWPaQciaxI9qcB7oPUUPtoA8aQ9EKJlbLgGYwobi8NjqGvWMw8vVYW170u45FQDwBMPItsUJ5yHDo/pub?gid=1689043725&single=true&output=csv";
+
+const CSV_PAYMENT =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHWPaQciaxI9qcB7oPUUPtoA8aQ9EKJlbLgGYwobi8NjqGvWMw8vVYW170u45FQDwBMPItsUJ5yHDo/pub?gid=1302279258&single=true&output=csv";
+
+const CSV_KEYFOCUS =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHWPaQciaxI9qcB7oPUUPtoA8aQ9EKJlbLgGYwobi8NjqGvWMw8vVYW170u45FQDwBMPItsUJ5yHDo/pub?gid=1614215098&single=true&output=csv";
+  
+  
+  
+  
+function loadCSV_JSONP(webAppUrl, csvUrl){
+  return new Promise((resolve, reject)=>{
+    const cbName = "cb_" + Math.random().toString(36).slice(2);
+    window[cbName] = (payload) => {
+      try{
+        if(!payload || !payload.ok) throw new Error(payload?.error || "JSONP payload error");
+        const rows = parseCSV(payload.data);
+        resolve(rows);
+      } catch(err){
+        reject(err);
+      } finally {
+        delete window[cbName];
+        script.remove();
+      }
+    };
+
+    const src = `${webAppUrl}?url=${encodeURIComponent(csvUrl)}&callback=${cbName}`;
+    const script = document.createElement("script");
+    script.src = src;
+    script.onerror = () => {
+      delete window[cbName];
+      script.remove();
+      reject(new Error("JSONP load failed"));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+
+/* ========================= CONFIG ========================= */
+const PROXY = "https://script.google.com/macros/s/AKfycbzoWYqJoF8OLl0E11x4PmCmQ8jt7u6i5UdBis_gtaAxvP62A5cwFJ2_WI-oLKK8dKd8hw/exec";
+
+/*
+
+https://script.google.com/macros/s/AKfycbzoWYqJoF8OLl0E11x4PmCmQ8jt7u6i5UdBis_gtaAxvP62A5cwFJ2_WI-oLKK8dKd8hw/exec
+
+"link sheet:"
+https://docs.google.com/spreadsheets/d/e/2PACX-1vRHWPaQciaxI9qcB7oPUUPtoA8aQ9EKJlbLgGYwobi8NjqGvWMw8vVYW170u45FQDwBMPItsUJ5yHDo/pub?gid=1989804057&single=true&output=csv
+https://docs.google.com/spreadsheets/d/e/2PACX-1vRHWPaQciaxI9qcB7oPUUPtoA8aQ9EKJlbLgGYwobi8NjqGvWMw8vVYW170u45FQDwBMPItsUJ5yHDo/pub?gid=1689043725&single=true&output=csv
+https://docs.google.com/spreadsheets/d/e/2PACX-1vRHWPaQciaxI9qcB7oPUUPtoA8aQ9EKJlbLgGYwobi8NjqGvWMw8vVYW170u45FQDwBMPItsUJ5yHDo/pub?gid=1302279258&single=true&output=csv
+
+
+*/
+const CONFIG = {
+  REPORT_DATE_LABEL: "Mar 03",
+  COD_WINDOW_LABEL: "Oct ’25 – Mar ’26",
+  OVERALL_STATUS_TEXT: "On Track",
+  OVERALL_STATUS_BADGE: "With Constraints",
+  SAFETY_TEXT: "Zero Incidents",
+  SAFETY_BADGE: "✓ Safe"
+};
+
+/* ========================= CSV (quote-aware) ========================= */
+function parseCSV(text){
+  const rows = [];
+  let row = [], cur = "", inQuotes = false;
+
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    const next = text[i+1];
+
+    if (ch === '"' && inQuotes && next === '"'){ cur += '"'; i++; continue; }
+    if (ch === '"'){ inQuotes = !inQuotes; continue; }
+
+    if (ch === ',' && !inQuotes){ row.push(cur); cur = ""; continue; }
+    if ((ch === '\n' || ch === '\r') && !inQuotes){
+      if (ch === '\r' && next === '\n') i++;
+      row.push(cur); cur = "";
+      if (row.length > 1 || row[0] !== "") rows.push(row);
+      row = [];
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur.length || row.length){
+    row.push(cur);
+    if (row.length > 1 || row[0] !== "") rows.push(row);
+  }
+
+  if (!rows.length) return [];
+  const headers = rows[0].map(h => h.trim());
+  return rows.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = (r[idx] ?? "").trim());
+    return obj;
+  });
+}
+
+async function loadCSV(url){
+  const res = await fetch(url, {cache:"no-store"});
+  if(!res.ok) throw new Error("Fetch failed: " + res.status);
+  const txt = await res.text();
+  return parseCSV(txt);
+}
+
+/* ========================= Helpers ========================= */
+const toNum = (v) => {
+  // pick the first number-like token, allow commas and decimals
+  const s = String(v ?? "").trim();
+  const m = s.match(/-?\d[\d,]*\.?\d*/); // e.g. "9,601 kWp" -> "9,601"
+  if (!m) return 0;
+  const n = Number(m[0].replace(/,/g, ""));
+  return isNaN(n) ? 0 : n;
+};
+
+const clampPct = (v)=> Math.max(0, Math.min(100, toNum(v)));
+const fmt = (n, digits=2)=> Number(n||0).toFixed(digits);
+
+function statusClass(status){
+  const s = String(status||"").toLowerCase();
+  if(s.includes("risk") || s.includes("delay")) return "status-red";
+  if(s.includes("progress") || s.includes("amber") || s.includes("slight")) return "status-amber";
+  return "status-green";
+}
+function phasePillHTML(phase){
+  const p = String(phase||"").toLowerCase();
+  if(p.includes("4")) return `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-bold">Ph 4</span>`;
+  if(p.includes("3")) return `<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-bold">Ph 3</span>`;
+  if(p.includes("2")) return `<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-bold">Ph 2</span>`;
+  return `<span class="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full font-bold">${phase||"Ph ?"}</span>`;
+}
+
+function iconByCategory(cat){
+  const c = String(cat || "").toLowerCase();
+  if (c.includes("cod")) return { icon:"fa-check-circle", color:"text-green-500" };
+  if (c.includes("schedule")) return { icon:"fa-exclamation-circle", color:"text-yellow-500" };
+  if (c.includes("construction")) return { icon:"fa-hard-hat", color:"text-gray-500" };
+  if (c.includes("financial") || c.includes("payment")) return { icon:"fa-chart-line", color:"text-blue-500" };
+  if (c.includes("safety")) return { icon:"fa-shield-alt", color:"text-green-600" };
+  return { icon:"fa-circle", color:"text-gray-400" };
+}
+
+function renderKeyFocus(rows){
+  const el = document.getElementById("keyFocusList");
+  if (!el) return;
+
+  const cleaned = rows
+    .filter(r => String(r.Active || "Y").trim().toUpperCase() !== "N")
+    .map(r => ({
+      category: r.Category || "",
+      title: r.Title || r.Category || "",
+      detail: r.Detail || "",
+      priority: toNum(r.Priority || 99)
+    }))
+    .sort((a,b)=> a.priority - b.priority);
+
+  el.innerHTML = cleaned.map(item => {
+    const ic = iconByCategory(item.title || item.category);
+    return `
+      <li class="flex items-start">
+        <i class="fas ${ic.icon} ${ic.color} mt-1 mr-3 text-sm"></i>
+        <div>
+          <p class="text-sm font-bold text-gray-800">${item.title}</p>
+          <p class="text-xs text-gray-500">${item.detail}</p>
+        </div>
+      </li>
+    `;
+  }).join("");
+}
+
+/* ========================= KPI calc ========================= */
+function getCapacityKWp(r){
+  return toNum(r.Capacity_kWp || r.Capacity || r["Capacity (kWp)"] || r.kWp || 0);
+}
+
+function isCodRow(r){
+  const flag = String(r.COD_Flag || r["COD_Flag"] || "").trim().toUpperCase();
+  return ["Y","YES","TRUE","1"].includes(flag);
+}
+
+function updateKpis(mainRows){
+  const totalProjects = mainRows.length;
+  const totalKWp = mainRows.reduce((s,r)=> s + getCapacityKWp(r), 0);
+  const codKWp = mainRows.filter(isCodRow).reduce((s,r)=> s + getCapacityKWp(r), 0);
+
+  const totalMWp = totalKWp/1000;
+  const codMWp = codKWp/1000;
+  const codPct = totalMWp > 0 ? (codMWp/totalMWp*100) : 0;
+
+  document.getElementById("kpiTotalProjects").textContent = totalProjects || "-";
+  document.getElementById("kpiTotalCapacity").textContent = totalMWp ? fmt(totalMWp, 2) : "-";
+  document.getElementById("kpiCodMWp").textContent = codMWp ? fmt(codMWp, 2) : "-";
+  document.getElementById("kpiCodPct").textContent = `↑ ${fmt(codPct, 1)}% completed`;
+
+  document.getElementById("kpiCodWindow").textContent = CONFIG.COD_WINDOW_LABEL;
+  document.getElementById("kpiOverallStatus").textContent = CONFIG.OVERALL_STATUS_TEXT;
+  document.getElementById("kpiOverallBadge").textContent = CONFIG.OVERALL_STATUS_BADGE;
+  document.getElementById("kpiSafetyText").textContent = CONFIG.SAFETY_TEXT;
+  document.getElementById("kpiSafetyBadge").textContent = CONFIG.SAFETY_BADGE;
+}
+
+/* ========================= Render: SUMMARY table ========================= */
+function renderSummary(rows){
+  const body = document.getElementById("summaryTableBody");
+  body.innerHTML = "";
+
+  rows.forEach(r=>{
+    const project = r.Project || r["Project / kWp"] || "";
+    const cap = getCapacityKWp(r);
+    const phase = r.Phase || "";
+    const progress = clampPct(r.Progress);
+    const paid = clampPct(r.Paid);
+    const status = r.Status || "";
+    const target = r.Target_COD || r["Target COD"] || "";
+    const remark = r.Remark || r["Key Remark"] || "";
+
+    const highlight = String(project).toUpperCase().includes("JNTC") ? "bg-yellow-50" : "";
+
+    const row = document.createElement("div");
+    row.className = `grid grid-cols-12 gap-4 p-4 items-center table-row ${highlight}`;
+    row.innerHTML = `
+      <div class="col-span-3">
+        <p class="font-bold brand-blue text-sm">${project}</p>
+        <p class="text-xs text-gray-500">${cap ? `${cap.toLocaleString()} kWp` : ""}</p>
+      </div>
+      <div class="col-span-1 text-center">${phasePillHTML(phase)}</div>
+      <div class="col-span-2">
+        <div class="flex justify-between text-xs mb-1 font-medium text-gray-600"><span>${progress}%</span></div>
+        <div class="progress-track"><div class="progress-fill bg-progress" style="width:${progress}%"></div></div>
+      </div>
+      <div class="col-span-2">
+        <div class="flex justify-between text-xs mb-1 font-medium text-gray-600"><span>${paid}%</span></div>
+        <div class="progress-track"><div class="progress-fill bg-paid" style="width:${paid}%"></div></div>
+      </div>
+      <div class="col-span-1 text-center"><span class="status-dot ${statusClass(status)}"></span></div>
+      <div class="col-span-3">
+        <p class="text-xs font-bold text-gray-700">${target}</p>
+        <p class="text-xs text-gray-500 truncate">${remark}</p>
+      </div>
+    `;
+    body.appendChild(row);
+  });
+}
+
+/* ========================= Render: PROGRESS DETAIL ========================= */
+let progressAll = [];
+function renderProgress(rows){
+  const body = document.getElementById("progressTableBody");
+  body.innerHTML = "";
+
+  rows.forEach(r=>{
+    const wk = r.Week_End || r.Week || r.Date || "";
+    const project = r.Project || "";
+    const phase = r.Phase || "";
+    const progress = clampPct(r.Progress);
+    const paid = clampPct(r.Paid);
+    const remark = r.Remark || "";
+
+    const row = document.createElement("div");
+    row.className = `grid grid-cols-12 gap-4 p-4 items-center table-row`;
+    row.innerHTML = `
+      <div class="col-span-2 text-xs text-gray-700 font-bold">${wk}</div>
+      <div class="col-span-2 text-sm font-bold brand-blue">${project}</div>
+      <div class="col-span-2">${phasePillHTML(phase)}</div>
+      <div class="col-span-2">
+        <div class="flex justify-between text-xs mb-1 font-medium text-gray-600"><span>${progress}%</span></div>
+        <div class="progress-track"><div class="progress-fill bg-progress" style="width:${progress}%"></div></div>
+      </div>
+      <div class="col-span-2">
+        <div class="flex justify-between text-xs mb-1 font-medium text-gray-600"><span>${paid}%</span></div>
+        <div class="progress-track"><div class="progress-fill bg-paid" style="width:${paid}%"></div></div>
+      </div>
+      <div class="col-span-2 text-xs text-gray-500 truncate">${remark}</div>
+    `;
+    body.appendChild(row);
+  });
+}
+
+/* ========================= Render: PAYMENT ========================= */
+let paymentAll = [];
+function renderPayment(rows){
+  const body = document.getElementById("paymentTableBody");
+  body.innerHTML = "";
+
+  rows.forEach(r=>{
+    const project = r.Project || "";
+    const milestone = r.Milestone || "";
+    const due = r.Due || "";
+    const amount = r.Amount || "";
+    const status = r.Status || "";
+    const notes = r.Notes || "";
+
+    const row = document.createElement("div");
+    row.className = `grid grid-cols-12 gap-4 p-4 items-center table-row`;
+    row.innerHTML = `
+      <div class="col-span-2 text-sm font-bold brand-blue">${project}</div>
+      <div class="col-span-3 text-xs text-gray-700 font-bold">${milestone}</div>
+      <div class="col-span-2 text-xs text-gray-700">${due}</div>
+      <div class="col-span-2 text-xs text-gray-700 font-bold">${amount}</div>
+      <div class="col-span-2 flex items-center gap-2">
+        <span class="status-dot ${statusClass(status)}"></span>
+        <span class="text-xs text-gray-600 font-bold">${status}</span>
+      </div>
+      <div class="col-span-1 text-xs text-gray-500 truncate">${notes}</div>
+    `;
+    body.appendChild(row);
+  });
+}
+
+/* ========================= Tabs ========================= */
+function setTab(tab){
+  document.querySelectorAll(".tab-btn").forEach(b=>{
+    b.classList.toggle("active", b.dataset.tab === tab);
+  });
+  document.getElementById("page-summary").classList.toggle("hidden", tab !== "summary");
+  document.getElementById("page-progress").classList.toggle("hidden", tab !== "progress");
+  document.getElementById("page-payment").classList.toggle("hidden", tab !== "payment");
+}
+document.querySelectorAll(".tab-btn").forEach(b=>{
+  b.addEventListener("click", ()=> setTab(b.dataset.tab));
+});
+
+/* ========================= Export CSV ========================= */
+function exportCSV(rows, filename){
+  if(!rows || !rows.length){ alert("No rows to export."); return; }
+  const headers = Object.keys(rows[0]);
+  const lines = [headers.join(",")].concat(rows.map(r=>headers.map(h=>{
+    const v = (r[h] ?? "").toString();
+    return /[,"\n]/.test(v) ? `"${v.replace(/"/g,'""')}"` : v;
+  }).join(",")));
+  const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+}
+/* ========================= isCodRow ========================= */
+
+
+/* ========================= Init ========================= */
+(async function init(){
+  document.getElementById("reportDateLabel").textContent = CONFIG.REPORT_DATE_LABEL || "";
+
+  try{
+    const main = await loadCSV_JSONP(WEBAPP, CSV_MAIN);
+    updateKpis(main);
+    renderSummary(main);
+
+    progressAll = await loadCSV_JSONP(WEBAPP, CSV_PROGRESS);
+    renderProgress(progressAll);
+
+    paymentAll = await loadCSV_JSONP(WEBAPP, CSV_PAYMENT);
+    renderPayment(paymentAll);
+	
+	const keyFocus = await loadCSV_JSONP(WEBAPP, CSV_KEYFOCUS);
+	renderKeyFocus(keyFocus);
+
+  } catch(err){
+    console.error(err);
+    const banner = document.createElement("div");
+    banner.className = "bg-red-50 border border-red-200 text-red-800 p-3 rounded mb-3 text-sm";
+    banner.innerHTML = `<b>Data load error:</b> ${err.message}`;
+    document.querySelector(".slide-container").prepend(banner);
+  }
+})();
+
+</script>
+
+</body>
+</html>
